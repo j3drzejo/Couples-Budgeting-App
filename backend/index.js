@@ -1,6 +1,5 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
@@ -17,6 +16,18 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     password TEXT
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS couples (
+  coupleID INTEGER PRIMARY KEY AUTOINCREMENT,
+  firstUser INTEGER, 
+  secondUser INTEGER
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS items (
+  itemid INTEGER PRIMARY KEY AUTOINCREMENT,
+  userid INTEGER,
+  description TEXT
+)`);
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -26,54 +37,15 @@ app.use(cors());
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
 
+    console.log(username, password);
+
     // Hash password
-    bcrypt.hash(password, 10, (err, hash) => {
-        if (err) {
-            res.status(500).send('Error hashing password');
-            return;
-        }
-
-        // Insert user into database
-        db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], (err) => {
-            if (err) {
-                res.status(400).send('Username already exists');
-                return;
-            }
-            res.status(201).send('User registered successfully');
-        });
-    });
-});
-
-// Login endpoint
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-
-    // Find user in the database
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
-        if (err) {
-            res.status(500).send('Error finding user');
-            return;
-        }
-
-        if (!row) {
-            res.status(404).send('User not found');
-            return;
-        }
-
-        // Compare passwords
-        bcrypt.compare(password, row.password, (err, result) => {
-            if (err) {
-                res.status(500).send('Error comparing passwords');
-                return;
-            }
-
-            if (!result) {
-                res.status(401).send('Incorrect password');
-                return;
-            }
-
-            res.status(200).send('Login successful');
-        });
+    db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, password], (err) => {
+      if (err) {
+          res.status(400).send('Username already exists');
+          return;
+      }
+      res.status(201).send('User registered successfully'); 
     });
 });
 
@@ -88,8 +60,6 @@ app.get('/users', (req, res) => {
       res.status(200).json(rows);
   });
 });
-
-
 
 // Start the server
 app.listen(PORT, () => {
