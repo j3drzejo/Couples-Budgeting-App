@@ -34,6 +34,19 @@ db.run(`CREATE TABLE IF NOT EXISTS items (
 )`);
 }
 
+function getUserId(username, callback) {
+  const query = "SELECT userID FROM users WHERE username = ?";
+  db.get(query, [username], (err, row) => {
+      if (err) {
+          return callback(err, null);
+      }
+      if (!row) {
+          // User not found
+          return callback(null, null);
+      }
+      callback(null, row.userID);
+  });
+}
 
 // Middleware
 app.use(bodyParser.json());
@@ -41,7 +54,6 @@ app.use(cors());
 
 app.post('/users/register', async (req, res) => {
   const { username, password } = req.body;
-  console.log(req.body);
 
   // Check if userid, description, and price are provided
   if (!username || !password) {
@@ -63,7 +75,7 @@ app.post('/users/register', async (req, res) => {
       
       const token = await JWT.sign({ username }, "secret",{expiresIn: 6000 * 60});
 
-      res.json({token});
+      res.json({token, username});
     }
   );
 });
@@ -106,10 +118,11 @@ app.post('/users/login', async (req, res) => {
 });
 
 app.post('/couples/create', (req, res) => {
-  const { firstUser, secondUser } = req.body;
+  const { firstUser } = req.body;
+  
 
   // Check if userid, description, and price are provided
-  if (!firstUser || !secondUser) {
+  if (!firstUser) {
     res.status(400).json({ error: 'users required are required fields' });
     return;
   }
@@ -117,7 +130,7 @@ app.post('/couples/create', (req, res) => {
   // Insert data into the items table
   db.run(
     `INSERT INTO couples (firstUser, secondUser) VALUES (?, ?)`,
-    [firstUser, secondUser],
+    [getUserId(firstUser), null],
     function(err) {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -128,6 +141,37 @@ app.post('/couples/create', (req, res) => {
     }
   );
 });
+
+// Endpoint to join a couple
+app.post('/couples/join', (req, res) => {
+  const { username, coupleID } = req.body;
+
+  // Check if the couple exists
+  db.get('SELECT * FROM couples WHERE coupleID = ?', [coupleID], (err, row) => {
+    if (err) {
+      console.error(err.message);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'Couple not found' });
+    }
+
+    // If the secondUserID is not null, the couple is already full
+    if (row.secondUserID !== null) {
+      return res.status(400).json({ error: 'Couple already has two users' });
+    }
+
+    // Update the couple with the user ID
+    db.run('UPDATE couples SET secondUserID = ? WHERE coupleID = ?', [getUserId(username), coupleID], function(err) {
+      if (err) {
+        console.error(err.message);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      res.status(200).json({ message: 'User joined the couple successfully' });
+    });
+  });
+});
+
   
 app.post('/items/add', (req, res) => {
   const { userid, description, price } = req.body;
@@ -177,12 +221,6 @@ app.get('/items/couplesHistory', (req, res) => {
       res.json(rows);
   });
 });
-
-app.get('/', (req, res) => {
-  db.all('SELECT * FROM users', (err, rows) =>{
-    res.json(rows);
-  })
-})
 
 // Start the server
 app.listen(PORT, () => {
