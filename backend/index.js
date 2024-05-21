@@ -54,7 +54,6 @@ app.use(cors());
 
 app.post('/users/register', async (req, res) => {
   const { username, password } = req.body;
-
   // Check if userid, description, and price are provided
   if (!username || !password) {
     res.status(400).json({ error: 'username, password are required fields' });
@@ -117,108 +116,204 @@ app.post('/users/login', async (req, res) => {
   });
 });
 
+// Endpoint to create a couple
 app.post('/couples/create', (req, res) => {
   const { firstUser } = req.body;
-  
 
-  // Check if userid, description, and price are provided
   if (!firstUser) {
-    res.status(400).json({ error: 'users required are required fields' });
-    return;
+    return res.status(400).json({ error: 'First user is a required field' });
   }
 
-  // Insert data into the items table
-  db.run(
-    `INSERT INTO couples (firstUser, secondUser) VALUES (?, ?)`,
-    [getUserId(firstUser), null],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      // Return success message
-      res.status(200).send("success");
+  getUserId(firstUser, (err, userId) => {
+    if (err) {
+      console.error(err.message);
+      return res.status(404).json({ error: 'User not found' });
     }
-  );
+
+    db.run(
+      `INSERT INTO couples (firstUserID, secondUserID) VALUES (?, ?)`,
+      [userId, null],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.status(200).send("success");
+      }
+    );
+  });
 });
 
 // Endpoint to join a couple
 app.post('/couples/join', (req, res) => {
-  const { username, coupleID } = req.body;
+  const { existingUser, newUser } = req.body;
 
-  // Check if the couple exists
-  db.get('SELECT * FROM couples WHERE coupleID = ?', [coupleID], (err, row) => {
+  if (!existingUser || !newUser) {
+    return res.status(400).json({ error: 'Both existingUser and newUser are required' });
+  }
+
+  getUserId(existingUser, (err, existingUserId) => {
     if (err) {
       console.error(err.message);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-    if (!row) {
-      return res.status(404).json({ error: 'Couple not found' });
+      return res.status(404).json({ error: 'Existing user not found' });
     }
 
-    // If the secondUserID is not null, the couple is already full
-    if (row.secondUserID !== null) {
-      return res.status(400).json({ error: 'Couple already has two users' });
-    }
-
-    // Update the couple with the user ID
-    db.run('UPDATE couples SET secondUserID = ? WHERE coupleID = ?', [getUserId(username), coupleID], function(err) {
+    // Check if the couple exists for the existing user and has a null secondUserID
+    db.get('SELECT * FROM couples WHERE firstUserID = ? AND secondUserID IS NULL', [existingUserId], (err, row) => {
       if (err) {
         console.error(err.message);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      res.status(200).json({ message: 'User joined the couple successfully' });
+      if (!row) {
+        return res.status(404).json({ error: 'Couple not found or already has a second user' });
+      }
+
+      // Get the ID of the new user
+      getUserId(newUser, (err, newUserId) => {
+        if (err) {
+          console.error(err.message);
+          return res.status(404).json({ error: 'New user not found' });
+        }
+
+        // Check if the new user already belongs to another couple
+        db.get('SELECT * FROM couples WHERE firstUserID = ? OR secondUserID = ?', [newUserId, newUserId], (err, row) => {
+          if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: 'Internal server error' });
+          }
+          if (row) {
+            return res.status(400).json({ error: 'New user already belongs to another couple' });
+          }
+
+          // Update the couple with the new user ID
+          db.run('UPDATE couples SET secondUserID = ? WHERE firstUserID = ?', [newUserId, existingUserId], function(err) {
+            if (err) {
+              console.error(err.message);
+              return res.status(500).json({ error: 'Internal server error' });
+            }
+            res.status(200).json({ message: 'User joined the couple successfully' });
+          });
+        });
+      });
     });
   });
 });
 
-  
+// Endpoint to add an item
 app.post('/items/add', (req, res) => {
-  const { userid, description, price } = req.body;
+  const { username, description, price } = req.body;
 
-  // Check if userid, description, and price are provided
-  if (!userid || !description || !price) {
-    res.status(400).json({ error: 'userid, description, and price are required fields' });
+  // Check if username, description, and price are provided
+  if (!username || !description || !price) {
+    res.status(400).json({ error: 'username, description, and price are required fields' });
     return;
   }
 
-  // Insert data into the items table
-  db.run(
-    `INSERT INTO items (userid, description, price) VALUES (?, ?, ?)`,
-    [userid, description, price],
-    function(err) {
+  // Find the userid by joining the users table
+  db.get(
+    `SELECT userID FROM users WHERE username = ?`,
+    [username],
+    (err, row) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      // Return success message
-      res.status(200).send("success");
+
+      if (!row) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const userid = row.userID;
+
+      // Insert data into the items table
+      db.run(
+        `INSERT INTO items (userid, description, price) VALUES (?, ?, ?)`,
+        [userid, description, price],
+        function(err) {
+          if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+          }
+          // Return success message
+          res.status(200).send("success");
+        }
+      );
     }
   );
 });
 
+// Endpoint to retrieve item history for couples
 app.get('/items/couplesHistory', (req, res) => {
-  const { userid } = req.body;
+  const { username } = req.body;
 
-  // Check if userid is provided
-  if (!userid) {
-    res.status(400).json({ error: 'userid is required' });
+  // Check if username is provided
+  if (!username) {
+    res.status(400).json({ error: 'username is required' });
     return;
   }
 
-  db.all(`
-    SELECT items.itemid, items.userid, items.price, items.description
-    FROM items
-    INNER JOIN couples ON items.userid = couples.firstUser OR items.userid = couples.secondUser
-    WHERE couples.firstUser = ? OR couples.secondUser = ?
-    ORDER BY items.itemid DESC
-    LIMIT 10
-  `,[userid, userid], (err, rows) => {
+  // Find the userid by joining the users table
+  db.get(
+    `SELECT userID FROM users WHERE username = ?`,
+    [username],
+    (err, row) => {
       if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+
+      if (!row) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const userid = row.userID;
+
+      db.all(`
+        SELECT 
+          items.itemid, 
+          items.userid, 
+          items.price, 
+          items.description,
+          users.username AS added_by_username
+        FROM items
+        INNER JOIN users ON items.userid = users.userID
+        INNER JOIN couples ON items.userid = couples.firstUserID OR items.userid = couples.secondUserID
+        WHERE couples.firstUserID = ? OR couples.secondUserID = ?
+        ORDER BY items.itemid DESC
+        LIMIT 10
+      `,
+      [userid, userid], 
+      (err, rows) => {
+        if (err) {
           res.status(500).json({ error: err.message });
           return;
-      }
-      res.json(rows);
+        }
+        res.json(rows);
+      });
+    }
+  );
+});
+
+// Endpoint to retrieve all couples
+app.get('/couples', (req, res) => {
+  db.all('SELECT * FROM couples', (err, rows) => {
+    if (err) {
+      console.error(err.message);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    res.status(200).json(rows);
+  });
+});
+
+// Endpoint to retrieve all users
+app.get('/users', (req, res) => {
+  db.all('SELECT * FROM users', (err, rows) => {
+    if (err) {
+      console.error(err.message);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    res.status(200).json(rows);
   });
 });
 
