@@ -29,6 +29,7 @@ const db = new sqlite3.Database(dbName, (error) => {
         userid INTEGER NOT NULL,
         description TEXT NOT NULL,
         value INTEGER NOT NULL,
+        creationDate TEXT NOT NULL,
         FOREIGN KEY (userid) REFERENCES users(userid)
       )`);
     });
