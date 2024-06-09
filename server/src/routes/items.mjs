@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import cookieJWTAuth from '../middleware/cookieJWTAuth.mjs';
+import checkIfInCoupleMiddleware from '../middleware/checkIfInCouple.mjs'
 import { insertItem } from '../db/itemsHandler.mjs'
 const router = Router();
 
 
-router.post('/api/items/insert', cookieJWTAuth, (request, response) => {
+router.post('/api/items/insert', cookieJWTAuth, checkIfInCoupleMiddleware, (request, response) => {
   const userId = request.user.userId;  // Assuming `userId` is attached to `request.user` by `cookieJWTAuth`
   const { description, value } = request.body;
 
