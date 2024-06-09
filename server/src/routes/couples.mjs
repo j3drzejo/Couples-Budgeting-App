@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { checkIfInCouple, findCouple, createCouple, joinCouple } from '../db/couplesHandler.mjs'
+import { checkIfInCouple, findCouple, createCouple, joinCouple, allCouples } from '../db/couplesHandler.mjs'
 import cookieJWTAuth from '../middleware/cookieJWTAuth.mjs'
 const router = Router();
 
@@ -18,6 +18,31 @@ router.post('/api/couples/create', cookieJWTAuth, (request, response) => {
           response.status(201).json({ success: 'Couple created', coupleId: result.id });
         }
       });
+    }
+  });
+});
+
+router.put('/api/couples/join/:coupleID', cookieJWTAuth, (request, response) => {
+  const coupleID = request.params.coupleID;
+  const userID = request.user.userId;
+
+  joinCouple(coupleID, userID, (error, result) => {
+    if (error) {
+      console.error('Error joining couple:', error);
+      response.status(500).json({ error: 'Failed to join couple' });
+    } else {
+      response.status(200).json({ success: 'Successfully joined couple', changes: result.changes });
+    }
+  });
+});
+
+router.get('/api/couples', (request, response) => {
+  allCouples((error, couples) => {
+    if (error) {
+      console.error('Error fetching couples:', error);
+      response.status(500).json({ error: 'Failed to fetch couples' });
+    } else {
+      response.status(200).json(couples);
     }
   });
 });
