@@ -5,6 +5,7 @@ const router = Router();
 
 router.post('/api/couples/create', cookieJWTAuth, (request, response) => {
   const userId = request.user.userId;
+  
   checkIfInCouple(userId, (error, row) => {
     if (error) {
       response.status(500).json({ error: 'Failed to check couple status' });
@@ -13,7 +14,7 @@ router.post('/api/couples/create', cookieJWTAuth, (request, response) => {
     } else {
       createCouple(userId, (error, result) => {
         if (error) {
-          response.status(500).json({ error: 'Failed to create couple', e: error});
+          response.status(500).json({ error: 'Failed to create couple', e: error });
         } else {
           response.status(201).json({ success: 'Couple created', coupleId: result.id });
         }
@@ -26,12 +27,20 @@ router.put('/api/couples/join/:coupleID', cookieJWTAuth, (request, response) => 
   const coupleID = request.params.coupleID;
   const userID = request.user.userId;
 
-  joinCouple(coupleID, userID, (error, result) => {
+  checkIfInCouple(userID, (error, row) => {
     if (error) {
-      console.error('Error joining couple:', error);
-      response.status(500).json({ error: 'Failed to join couple' });
+      response.status(500).json({ error: 'Failed to check couple status' });
+    } else if (row) {
+      response.status(400).json({ error: 'User is already in a couple' });
     } else {
-      response.status(200).json({ success: 'Successfully joined couple', changes: result.changes });
+      joinCouple(coupleID, userID, (error, result) => {
+        if (error) {
+          console.error('Error joining couple:', error);
+          response.status(500).json({ error: 'Failed to join couple' });
+        } else {
+          response.status(200).json({ success: 'Successfully joined couple', changes: result.changes });
+        }
+      });
     }
   });
 });
