@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { checkIfInCouple, findCouple, createCouple, joinCouple, allCouples } from '../db/couplesHandler.mjs'
+import { checkIfInCouple, findCouple, createCouple, joinCouple, allCouples, leaveCouple } from '../db/couplesHandler.mjs'
 import cookieJWTAuth from '../middleware/cookieJWTAuth.mjs'
 const router = Router();
 
