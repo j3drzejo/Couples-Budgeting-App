@@ -45,6 +45,18 @@ router.put('/api/couples/join/:coupleID', cookieJWTAuth, (request, response) => 
   });
 });
 
+router.put('/api/couples/leave', cookieJWTAuth, (request, response) => {
+  const userId = request.user.userId;
+
+  leaveCouple(userId, (error, result) => {
+    if (error) {
+      response.status(500).json({ error: 'Failed to leave couple' });
+    } else {
+      response.status(200).json({ success: 'Successfully left couple', changes: result.changes });
+    }
+  });
+});
+
 router.get('/api/couples', (request, response) => {
   allCouples((error, couples) => {
     if (error) {
