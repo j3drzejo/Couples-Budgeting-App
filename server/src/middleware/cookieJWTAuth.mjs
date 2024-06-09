@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 const cookieJwtAuth = (request, response, next) => {
-  const token = request.cookies.token; // The cookie name should match the one set in the login route
+  const token = request.cookies.token;
   if (!token) {
     return response.status(401).send({ error: 'Unauthorized' });
   }
@@ -11,8 +11,8 @@ const cookieJwtAuth = (request, response, next) => {
     request.user = user;
     next();
   } catch (error) {
-    response.clearCookie('token'); // Make sure the cookie name matches
-    next(error);
+    response.clearCookie('token');
+    return response.status(401).json({ error: 'Unauthorized' });
   }
 };
 

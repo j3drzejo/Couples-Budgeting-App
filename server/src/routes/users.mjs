@@ -60,7 +60,7 @@ router.post('/api/users/login', (request, response) => {
 
 router.get('/api/users/auth', cookieJwtAuth, (request, response) => {
   // If the middleware executes without throwing an error, it means the user is authenticated
-  response.status(200).json({ message: 'Authenticated', user: request.user.userId, token: request.cookies.token });
+  response.status(200).json({ message: 'Authenticated', userID: request.user.userId, token: request.cookies.token });
 });
 
 export default router;
