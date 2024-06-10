@@ -7,7 +7,7 @@ const cookieJwtAuth = (request, response, next) => {
   }
 
   try {
-    const user = jwt.verify(token, 'secret'); // Adjust the secret key
+    const user = jwt.verify(token, process.env.SECRET); // Adjust the secret key
     request.user = user;
     next();
   } catch (error) {
