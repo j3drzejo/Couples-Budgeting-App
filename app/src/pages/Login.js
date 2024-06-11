@@ -1,8 +1,12 @@
-import TextField from '@mui/material/TextField';
+import { Link, TextField } from '@mui/material';
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [credentials, setCredentials] = useState({
     login: "",
     password: ""
@@ -18,24 +22,7 @@ export default function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log("sub")
-    try {
-      const response = await axios.post('http://localhost:3001/users/login', {
-        username: credentials.login,
-        password: credentials.password
-      });
-      
-      // Assuming response.data.token contains the token
-      const token = response.data.token;
-      
-      // Store token and username in local storage
-      localStorage.setItem('token', token);
-      alert("logged successfuly");
-      // Optionally, redirect to another page or update state to indicate successful login
-    } catch (error) {
-      // Handle error
-      alert(error.response.data.error);
-    }
+    
   };
 
   return (
@@ -66,6 +53,17 @@ export default function Login() {
           <button type="submit" onSubmit={handleSubmit}>Sign In!</button>
         </div>
       </form>
+      <div>
+        <Link
+          component="button"
+          variant="body2"
+          onClick={() => {
+            navigate("/register");
+          }}
+        >
+          Don`t have an account? Sign up!`
+        </Link>
+      </div>
     </div>
   );
 }

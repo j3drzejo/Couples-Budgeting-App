@@ -1,14 +1,14 @@
-import TextField from '@mui/material/TextField';
 import { useState } from 'react';
+import { Link, TextField } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",
     password: ""
   });
-  const navigate = useNavigate();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -20,25 +20,7 @@ export default function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(credentials);
-    try {
-      const response = await axios.post('http://localhost:3001/users/register', {
-        username: credentials.username,
-        password: credentials.password
-      });
-
-      const token = response.data.token;
-      const username = response.data.username;
-
-      // Store token and username in local storage
-      localStorage.setItem('token', token);
-      localStorage.setItem('username', username);
-      navigate("/")
-      // Optionally, redirect to another page or update state to indicate successful registration
-    } catch (error) {
-      // Handle error
-      alert(error.response.data.error);
-    }
+    
   };
 
   return (
@@ -69,6 +51,17 @@ export default function Register() {
           <button type="submit">Sign Up!</button>
         </div>
       </form>
+      <div>
+        <Link
+          component="button"
+          variant="body2"
+          onClick={() => {
+            navigate("/login");
+          }}
+        >
+          Already have an account? Sign in!
+        </Link>
+      </div>
     </div>
   );
 }
