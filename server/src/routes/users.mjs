@@ -31,7 +31,7 @@ router.post('/api/users/register', (request, response) => {
     if (err) {
       response.status(500).send({ error: 'Failed to insert user' });
     } else {
-      const token = jwt.sign({ userId: user.userid }, process.env.SECRET, { expiresIn: '1h' }); // Adjust the secret key and expiration time as needed
+      const token = jwt.sign({ userId: userId }, process.env.SECRET, { expiresIn: '1h' }); // Adjust the secret key and expiration time as needed
 
       // Set the token as a cookie in the response
       response.cookie('token', token, { httpOnly: true, maxAge: 3600000 }); // Adjust the cookie options as needed
