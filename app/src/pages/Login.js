@@ -8,7 +8,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [credentials, setCredentials] = useState({
-    login: "",
+    username: "",
     password: ""
   });
 
@@ -22,7 +22,26 @@ export default function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
+    try {
+      const response = await axios.post('http://localhost:3001/api/users/login', {
+        username: credentials.username,
+        password: credentials.password
+      }, {
+        withCredentials: true
+      });
+
+      if (response.status === 201) {
+        // Registration was successful, and the cookie is set by the server
+        alert('Registration successful:', response.data);
+
+        // Optionally, save the token in localStorage or state for later use
+        // localStorage.setItem('token', response.data.token); // if token is returned in the response body
+      }
+    } catch (error) {
+      alert('Registration failed');
+      setCredentials({username: "", password: ""});
+    }
   };
 
   useEffect(() => {
@@ -52,8 +71,8 @@ export default function Login() {
             id="standard-basic" 
             label="Login" 
             variant="standard" 
-            name="login" 
-            value={credentials.login} 
+            name="username" 
+            value={credentials.username} 
             onChange={handleChange} 
           />
         </div>

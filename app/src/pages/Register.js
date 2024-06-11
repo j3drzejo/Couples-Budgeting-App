@@ -31,13 +31,14 @@ export default function Register() {
 
       if (response.status === 201) {
         // Registration was successful, and the cookie is set by the server
-        console.log('Registration successful:', response.data);
+        alert('Registration successful:', response.data);
 
         // Optionally, save the token in localStorage or state for later use
         // localStorage.setItem('token', response.data.token); // if token is returned in the response body
       }
     } catch (error) {
-      console.error('Registration failed:', error.response ? error.response.data : error.message);
+      setCredentials({username: "", password: ""});
+      alert('Registration failed');
     }
   };
 
