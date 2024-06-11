@@ -66,4 +66,9 @@ router.get('/api/users/auth', cookieJwtAuth, (request, response) => {
   response.status(200).json({ message: 'Authenticated', userID: request.user.userId, token: request.cookies.token });
 });
 
+router.get('/api/users/logout', (request, response) => {
+  response.clearCookie('token').status(200).json({ message: 'Logout successful' });
+});
+
+
 export default router;

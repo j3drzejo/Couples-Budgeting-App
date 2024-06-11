@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, TextField } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -20,8 +20,44 @@ export default function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
+    try {
+      const response = await axios.post('http://localhost:3001/api/users/register', {
+        username: credentials.username,
+        password: credentials.password
+      }, {
+        withCredentials: true
+      });
+
+      if (response.status === 201) {
+        // Registration was successful, and the cookie is set by the server
+        console.log('Registration successful:', response.data);
+
+        // Optionally, save the token in localStorage or state for later use
+        // localStorage.setItem('token', response.data.token); // if token is returned in the response body
+      }
+    } catch (error) {
+      console.error('Registration failed:', error.response ? error.response.data : error.message);
+    }
   };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/users/auth', {
+          withCredentials: true // This is crucial to include cookies in the request
+        });
+
+        if (response.status === 200) {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   return (
     <div className='flex flex-col items-center justify-center min-h-screen p-10'>

@@ -5,7 +5,13 @@ import cors from 'cors'
 import 'dotenv/config'
 
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+  origin: process.env.DOMAIN, // Adjust the domain as needed
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 app.use(routes);
