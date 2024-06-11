@@ -1,8 +1,12 @@
-import TextField from '@mui/material/TextField';
-import { useState } from 'react';
+import { Link, TextField } from '@mui/material';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [credentials, setCredentials] = useState({
     login: "",
     password: ""
@@ -18,25 +22,27 @@ export default function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log("sub")
-    try {
-      const response = await axios.post('http://localhost:3001/users/login', {
-        username: credentials.login,
-        password: credentials.password
-      });
-      
-      // Assuming response.data.token contains the token
-      const token = response.data.token;
-      
-      // Store token and username in local storage
-      localStorage.setItem('token', token);
-      alert("logged successfuly");
-      // Optionally, redirect to another page or update state to indicate successful login
-    } catch (error) {
-      // Handle error
-      alert(error.response.data.error);
-    }
+    
   };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/users/auth', {
+          withCredentials: true // This is crucial to include cookies in the request
+        });
+
+        if (response.status === 200) {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
 
   return (
     <div className='flex flex-col items-center justify-center min-h-screen p-10'>
@@ -66,6 +72,17 @@ export default function Login() {
           <button type="submit" onSubmit={handleSubmit}>Sign In!</button>
         </div>
       </form>
+      <div>
+        <Link
+          component="button"
+          variant="body2"
+          onClick={() => {
+            navigate("/register");
+          }}
+        >
+          Don`t have an account? Sign up!`
+        </Link>
+      </div>
     </div>
   );
 }

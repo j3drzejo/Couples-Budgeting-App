@@ -1,14 +1,14 @@
-import TextField from '@mui/material/TextField';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link, TextField } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",
     password: ""
   });
-  const navigate = useNavigate();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -20,26 +20,44 @@ export default function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(credentials);
+
     try {
-      const response = await axios.post('http://localhost:3001/users/register', {
+      const response = await axios.post('http://localhost:3001/api/users/register', {
         username: credentials.username,
         password: credentials.password
+      }, {
+        withCredentials: true
       });
 
-      const token = response.data.token;
-      const username = response.data.username;
+      if (response.status === 201) {
+        // Registration was successful, and the cookie is set by the server
+        console.log('Registration successful:', response.data);
 
-      // Store token and username in local storage
-      localStorage.setItem('token', token);
-      localStorage.setItem('username', username);
-      navigate("/")
-      // Optionally, redirect to another page or update state to indicate successful registration
+        // Optionally, save the token in localStorage or state for later use
+        // localStorage.setItem('token', response.data.token); // if token is returned in the response body
+      }
     } catch (error) {
-      // Handle error
-      alert(error.response.data.error);
+      console.error('Registration failed:', error.response ? error.response.data : error.message);
     }
   };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/users/auth', {
+          withCredentials: true // This is crucial to include cookies in the request
+        });
+
+        if (response.status === 200) {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   return (
     <div className='flex flex-col items-center justify-center min-h-screen p-10'>
@@ -69,6 +87,17 @@ export default function Register() {
           <button type="submit">Sign Up!</button>
         </div>
       </form>
+      <div>
+        <Link
+          component="button"
+          variant="body2"
+          onClick={() => {
+            navigate("/login");
+          }}
+        >
+          Already have an account? Sign in!
+        </Link>
+      </div>
     </div>
   );
 }
