@@ -57,13 +57,14 @@ router.put('/api/couples/leave', cookieJWTAuth, (request, response) => {
   });
 });
 
-router.get('/api/couples', (request, response) => {
-  allCouples((error, couples) => {
-    if (error) {
-      console.error('Error fetching couples:', error);
-      response.status(500).json({ error: 'Failed to fetch couples' });
+router.get('/api/couples/', cookieJWTAuth, (request, response) => {
+  const userId = request.user.userId;
+  
+  checkIfInCouple(userId, (error, row) => {
+    if (error || !row) {
+      response.status(500).json();
     } else {
-      response.status(200).json(couples);
+      response.status(200).json();
     }
   });
 });

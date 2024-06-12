@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, TextField } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { checkAuth } from '../utils/check'
 
 export default function Register() {
   const navigate = useNavigate();
@@ -43,21 +44,7 @@ export default function Register() {
   };
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get('http://localhost:3001/api/users/auth', {
-          withCredentials: true // This is crucial to include cookies in the request
-        });
-
-        if (response.status === 200) {
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-      }
-    };
-
-    checkAuth();
+    checkAuth(navigate);
   }, [navigate]);
 
   return (

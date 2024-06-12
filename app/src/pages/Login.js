@@ -2,7 +2,7 @@ import { Link, TextField } from '@mui/material';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+import { checkAuth } from '../utils/check'
 
 export default function Login() {
   const navigate = useNavigate();
@@ -33,33 +33,19 @@ export default function Login() {
 
       if (response.status === 201) {
         // Registration was successful, and the cookie is set by the server
-        alert('Registration successful:', response.data);
+        alert('Login successful', response.data);
 
         // Optionally, save the token in localStorage or state for later use
         // localStorage.setItem('token', response.data.token); // if token is returned in the response body
       }
     } catch (error) {
-      alert('Registration failed');
+      alert('Login failed');
       setCredentials({username: "", password: ""});
     }
   };
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get('http://localhost:3001/api/users/auth', {
-          withCredentials: true // This is crucial to include cookies in the request
-        });
-
-        if (response.status === 200) {
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-      }
-    };
-
-    checkAuth();
+    checkAuth(navigate);
   }, [navigate]);
 
 
