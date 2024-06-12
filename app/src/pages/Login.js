@@ -2,13 +2,13 @@ import { Link, TextField } from '@mui/material';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+import { checkAuth } from '../utils/check'
 
 export default function Login() {
   const navigate = useNavigate();
 
   const [credentials, setCredentials] = useState({
-    login: "",
+    username: "",
     password: ""
   });
 
@@ -22,25 +22,30 @@ export default function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
+    try {
+      const response = await axios.post('http://localhost:3001/api/users/login', {
+        username: credentials.username,
+        password: credentials.password
+      }, {
+        withCredentials: true
+      });
+
+      if (response.status === 201) {
+        // Registration was successful, and the cookie is set by the server
+        alert('Login successful', response.data);
+
+        // Optionally, save the token in localStorage or state for later use
+        // localStorage.setItem('token', response.data.token); // if token is returned in the response body
+      }
+    } catch (error) {
+      alert('Login failed');
+      setCredentials({username: "", password: ""});
+    }
   };
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get('http://localhost:3001/api/users/auth', {
-          withCredentials: true // This is crucial to include cookies in the request
-        });
-
-        if (response.status === 200) {
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-      }
-    };
-
-    checkAuth();
+    checkAuth(navigate);
   }, [navigate]);
 
 
@@ -52,8 +57,8 @@ export default function Login() {
             id="standard-basic" 
             label="Login" 
             variant="standard" 
-            name="login" 
-            value={credentials.login} 
+            name="username" 
+            value={credentials.username} 
             onChange={handleChange} 
           />
         </div>
